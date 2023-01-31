@@ -8,6 +8,24 @@ from glob import glob
 import os
 from pathlib import Path
 
+def reformat(
+    ds_in,
+    change_name=True
+):
+    if hasattr(ds_in, 'plev'):
+        ds_in = ds_in.rename({'plev': 'level'})
+    
+    if hasattr(ds_in, 'level'):
+        if ds_in.level.attrs['units'] == 'Pa':
+            ds_in['level'] = ds_in['level']/100
+            ds_in.level.attrs['units'] = 'hPa'
+
+    if change_name:
+        # change variable abreviations 
+        ds_in = ds_in.rename(CMIP_TO_ERA)
+    
+    return ds_in
+
 
 def regrid(ds_in, dataset, resolution, method="bilinear", reuse_weights=True):
     """
@@ -111,6 +129,8 @@ def regrider(
         ds_in = xr.open_dataset(fn, engine="cfgrib") if is_grib else xr.open_dataset(fn)
 
         fn_out = (
+            variable
+            + "_" +
             custom_fn
             or "_".join(str(fn).split("/")[-1][:-3].split("_")[-1:])
             + "_"
@@ -122,6 +142,8 @@ def regrider(
             print(output_dir + "/" + fn_out + " already generated")
             continue
         ds_out = regrid(ds_in, dataset, float(resolution), method, reuse_weights)
+        if dataset is "cmip6" and source is "esgf":
+            ds_out = reformat(ds_out)
 
         print(f"Saving file: {output_dir + '/' + fn_out}")
         ds_out.to_netcdf(output_dir + "/" + fn_out)
