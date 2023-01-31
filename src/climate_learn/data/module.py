@@ -44,7 +44,7 @@ class DataModule(LightningDataModule):
         )
         self.save_hyperparameters(logger=False)
 
-        if dataset != "ERA5":
+        if dataset != "ERA5" and dataset != "CMIP6":
             raise NotImplementedError("Only support ERA5")
         if task == "downscaling" and root_highres_dir is None:
             raise NotImplementedError(
