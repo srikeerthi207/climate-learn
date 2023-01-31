@@ -110,6 +110,7 @@ class ERA5Forecasting(ERA5):
         split="train",
     ):
         print(f"Creating {split} dataset")
+        print("update")
         super().__init__(root_dir, root_highres_dir, in_vars, years, split)
 
         self.in_vars = list(self.data_dict.keys())
@@ -120,8 +121,11 @@ class ERA5Forecasting(ERA5):
 
         inp_data = xr.concat([self.data_dict[k] for k in self.in_vars], dim="level")
         out_data = xr.concat([self.data_dict[k] for k in self.out_vars], dim="level")
-        self.inp_data = inp_data.to_numpy().astype(np.float32)
+        print(inp_data)
         self.out_data = out_data.to_numpy().astype(np.float32)
+        print(2)
+        self.inp_data = inp_data.to_numpy().astype(np.float32)
+        print(f"Finished inp and out _data")
 
         constants_data = [
             self.constants[k].to_numpy().astype(np.float32)
@@ -132,6 +136,8 @@ class ERA5Forecasting(ERA5):
         else:
             self.constants_data = None
 
+        # then this fails 
+        print(len(self.inp_data) == len(self.out_data))
         assert len(self.inp_data) == len(self.out_data)
 
         self.downscale_ratio = 1
@@ -159,6 +165,7 @@ class ERA5Forecasting(ERA5):
         self.out_lon = self.data_dict[self.out_vars[0]].lon.to_numpy().copy()
         self.out_lat = self.data_dict[self.out_vars[0]].lat.to_numpy().copy()
 
+        print("Almost done!")
         del self.data_dict
 
     def get_normalize(self, data):
@@ -264,7 +271,7 @@ class ERA5Downscaling(ERA5):
         self.inp_lat = self.data_dict[self.in_vars[0]].lat.to_numpy().copy()
         self.out_lon = self.data_highres_dict[self.out_vars[0]].lon.to_numpy().copy()
         self.out_lat = self.data_highres_dict[self.out_vars[0]].lat.to_numpy().copy()
-
+        
         del self.data_dict
         del self.data_highres_dict
 
