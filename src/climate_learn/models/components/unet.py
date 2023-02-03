@@ -102,7 +102,7 @@ class Unet(nn.Module):
             activation=activation,
             norm=norm,
             dropout=dropout,
-            mc_dropout=mc_dropout,
+            # mc_dropout=mc_dropout,
         )
 
         # #### Second half of U-Net - increasing resolution
