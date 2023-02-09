@@ -8,7 +8,7 @@ from tqdm.notebook import tqdm
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms
 from ..constants import (
-    NAME_TO_VAR,
+    NAME_TO_CMIP,
     DEFAULT_PRESSURE_LEVELS,
     CONSTANTS,
     SINGLE_LEVEL_VARS,
@@ -33,14 +33,14 @@ class CMIP6(Dataset):
 
     def load_from_nc(self, data_dir):
         constant_names = [
-            name for name in self.variables if NAME_TO_VAR[name] in CONSTANTS
+            name for name in self.variables if NAME_TO_CMIP[name] in CONSTANTS
         ]
         self.constants = {}
         if len(constant_names) > 0:
             ps = glob.glob(os.path.join(data_dir, "constants", "*.nc"))
             all_constants = xr.open_mfdataset(ps, combine="by_coords")
             for name in constant_names:
-                self.constants[name] = all_constants[NAME_TO_VAR[name]]
+                self.constants[name] = all_constants[NAME_TO_CMIP[name]]
 
         non_const_names = [
             name for name in self.variables if name not in constant_names
@@ -50,34 +50,50 @@ class CMIP6(Dataset):
             if name in SINGLE_LEVEL_VARS:
                 data_dict[name] = []
             elif name in PRESSURE_LEVEL_VARS:
-                for level in DEFAULT_PRESSURE_LEVELS:
-                    # change made to level
-                    data_dict[f"{name}_{level}"] = []
+                # for level in DEFAULT_PRESSURE_LEVELS:
+                #     # change made to level
+                #     data_dict[f"{name}_{level}"] = []
+                if name == "geopotential":
+                        level = 500
+                elif name == "temperature":
+                    level = 850
+                data_dict[f"{name}_{level}"] = []
             else:
                 raise NotImplementedError(
                     f"{name} is not either in single-level or pressure-level dict"
                 )
 
         for year in tqdm(self.years):
-            # change made to year
-            if year % 5 != 0:
-                continue
+            # change made here 
+            if not os.path.exists(os.path.join(data_dir, non_const_names[0], f"{year}*.nc")):
+                year = year - year % 5
+
             for var in non_const_names:
                 dir_var = os.path.join(data_dir, var)
                 # change made to get file name
-                ps = glob.glob(os.path.join(dir_var, f"{var}_{year}*.nc"))
+                ps = glob.glob(os.path.join(dir_var, f"{year}*.nc"))
+                print(os.path.join(dir_var, f"{year}*.nc"))
                 xr_data = xr.open_mfdataset(ps, combine="by_coords")
-                xr_data = xr_data[NAME_TO_VAR[var]]
+                xr_data = xr_data[NAME_TO_CMIP[var]]
+                if var == "geopotential":
+                    xr_data *= 9.8
                 # np_data = xr_data.to_numpy()
                 if len(xr_data.shape) == 3:
                     # change made
-                    xr_data = xr_data.expand_dims(dim="plev", axis=1)
+                    # only get data from time within the year
+                    xr_data = xr_data.expand_dims(dim="plev", axis=1).sel(time=xr_data.time.dt.year == year)
                     data_dict[var].append(xr_data)
                 else:  # pressure level
-                    for level in DEFAULT_PRESSURE_LEVELS:
-                        # change made to level
-                        xr_data_level = xr_data.sel(plev=[level*100])
-                        data_dict[f"{var}_{level}"].append(xr_data_level)
+                    # for level in DEFAULT_PRESSURE_LEVELS:
+                    #     # change made to level
+                    #     xr_data_level = xr_data.sel(plev=[level*100]).sel(time=xr_data.time.dt.year == year)
+                    #     data_dict[f"{var}_{level}"].append(xr_data_level)
+                    if var == "geopotential":
+                        level = 500
+                    elif var == "temperature":
+                        level = 850
+                    xr_data_level = xr_data.sel(plev=[level*100]).sel(time=xr_data.time.dt.year == year)
+                    data_dict[f"{var}_{level}"].append(xr_data_level)
 
         data_dict = {k: xr.concat(data_dict[k], dim="time") for k in data_dict.keys()}
         # precipitation and solar radiation miss a few data points in the beginning
@@ -89,8 +105,9 @@ class CMIP6(Dataset):
     def get_lat_lon(self):
         # lat lon is stored in each of the nc files, just need to load one and extract
         dir_var = os.path.join(self.root_dir, self.variables[0])
-        year = self.years[0]
-        ps = glob.glob(os.path.join(dir_var, f"{self.variables[0]}_{year}*.nc"))
+        year = self.years[0] - self.years[0] % 5
+        # change here
+        ps = glob.glob(os.path.join(dir_var, f"{year}*.nc"))
         xr_data = xr.open_mfdataset(ps, combine="by_coords")
         self.lat = xr_data["lat"].to_numpy()
         self.lon = xr_data["lon"].to_numpy()
@@ -125,10 +142,11 @@ class CMIP6Forecasting(CMIP6):
         self.window = window
         self.pred_range = pred_range
 
-        print(self.in_vars)
         inp_data = xr.concat([self.data_dict[k] for k in self.in_vars], dim="plev")
         out_data = xr.concat([self.data_dict[k] for k in self.out_vars], dim="plev")
+        print("in", len(inp_data))
         self.inp_data = inp_data.to_numpy().astype(np.float32)
+        print("out", len(out_data))
         self.out_data = out_data.to_numpy().astype(np.float32)
 
         constants_data = [

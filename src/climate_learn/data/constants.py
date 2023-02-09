@@ -5,6 +5,7 @@ NAME_TO_CMIP = {
     "temperature": "ta",
     "relative_humidity": "r",
     "specific_humidity": "hus",
+    "air_temperature": "tas"
 }
 
 NAME_TO_VAR = {
@@ -24,6 +25,7 @@ NAME_TO_VAR = {
     "temperature": "t",
     "relative_humidity": "r",
     "specific_humidity": "q",
+    "air_temperature": "tas"
 }
 
 VAR_TO_NAME = {v: k for k, v in NAME_TO_VAR.items()}
@@ -39,6 +41,7 @@ SINGLE_LEVEL_VARS = [
     "land_sea_mask",
     "orography",
     "lattitude",
+    "air_temperature"
 ]
 
 PRESSURE_LEVEL_VARS = [
@@ -50,7 +53,8 @@ PRESSURE_LEVEL_VARS = [
     "specific_humidity",
 ]
 
-DEFAULT_PRESSURE_LEVELS = [50, 250, 500, 600, 700, 850, 925]
+# DEFAULT_PRESSURE_LEVELS = [50, 250, 500, 600, 700, 850, 925]
+DEFAULT_PRESSURE_LEVELS = [850]
 
 CONSTANTS = ["orography", "lsm", "slt", "lat2d", "lon2d"]
 

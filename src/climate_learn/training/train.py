@@ -39,6 +39,7 @@ class Trainer:
             devices=devices,
             precision=precision,
             max_epochs=max_epochs,
+            default_root_dir="/data0/ckpts/seongbin/cross-train-z500",
             callbacks=[checkpoint_callback, summary_callback, progress_callback],
         )
 
