@@ -121,7 +121,6 @@ class ERA5Forecasting(ERA5):
         split="train",
     ):
         print(f"Creating {split} dataset")
-        print("update")
         super().__init__(root_dir, root_highres_dir, in_vars, years, split)
 
         self.in_vars = list(self.data_dict.keys())
@@ -147,8 +146,6 @@ class ERA5Forecasting(ERA5):
         else:
             self.constants_data = None
 
-        # then this fails 
-        print(len(self.inp_data) == len(self.out_data))
         assert len(self.inp_data) == len(self.out_data)
 
         self.downscale_ratio = 1
