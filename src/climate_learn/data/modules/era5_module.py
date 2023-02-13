@@ -128,13 +128,14 @@ class ERA5Forecasting(ERA5):
         self.history = history
         self.window = window
         self.pred_range = pred_range
-
+        self.subsample = subsample
+        
         inp_data = xr.concat([self.data_dict[k] for k in self.in_vars], dim="level")
         out_data = xr.concat([self.data_dict[k] for k in self.out_vars], dim="level")
         print("out", len(out_data))
-        self.out_data = out_data.to_numpy().astype(np.float32)
+        self.out_data = out_data[::subsample].to_numpy().astype(np.float32)
         print("in", len(inp_data))
-        self.inp_data = inp_data.to_numpy().astype(np.float32)
+        self.inp_data = inp_data[::subsample].to_numpy().astype(np.float32)
         print(f"Finished inp and out _data")
 
         constants_data = [
@@ -163,15 +164,13 @@ class ERA5Forecasting(ERA5):
             self.out_transform = None
             self.constant_transform = None
 
-        self.time = (
-            self.data_dict[self.in_vars[0]]
-            .time.to_numpy()[:-pred_range:subsample]
-            .copy()
-        )
         self.inp_lon = self.data_dict[self.in_vars[0]].lon.to_numpy().copy()
         self.inp_lat = self.data_dict[self.in_vars[0]].lat.to_numpy().copy()
         self.out_lon = self.data_dict[self.out_vars[0]].lon.to_numpy().copy()
         self.out_lat = self.data_dict[self.out_vars[0]].lat.to_numpy().copy()
+        self.time = self.data_dict[self.in_vars[0]].time.to_numpy()[:-pred_range:subsample].copy()
+        print(self.time[0])
+        print(self.time[12])
 
         print("Almost done!")
         del self.data_dict
@@ -197,7 +196,7 @@ class ERA5Forecasting(ERA5):
             idx = index + self.window * i
             inp.append(self.inp_data[idx])
         inp = np.stack(inp, axis=0)
-        out_idx = index + (self.history - 1) * self.window + self.pred_range
+        out_idx = index + (self.history - 1) * self.window + (self.pred_range // self.subsample)
         out = self.out_data[out_idx]
         return inp, out
 

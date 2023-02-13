@@ -66,13 +66,12 @@ class CMIP6(Dataset):
         for year in tqdm(self.years):
             # change made here 
             if not os.path.exists(os.path.join(data_dir, non_const_names[0], f"{year}*.nc")):
-                year = year - year % 5
+                yr = year - year % 5
 
             for var in non_const_names:
                 dir_var = os.path.join(data_dir, var)
                 # change made to get file name
-                ps = glob.glob(os.path.join(dir_var, f"{year}*.nc"))
-                print(os.path.join(dir_var, f"{year}*.nc"))
+                ps = glob.glob(os.path.join(dir_var, f"{yr}*.nc"))
                 xr_data = xr.open_mfdataset(ps, combine="by_coords")
                 xr_data = xr_data[NAME_TO_CMIP[var]]
                 if var == "geopotential":
@@ -142,6 +141,14 @@ class CMIP6Forecasting(CMIP6):
         self.window = window
         self.pred_range = pred_range
 
+        print(pred_range)
+
+        self.time = (
+            self.data_dict[self.in_vars[0]]
+            .time.to_numpy()[:-pred_range:subsample]
+            .copy()
+        )
+
         inp_data = xr.concat([self.data_dict[k] for k in self.in_vars], dim="plev")
         out_data = xr.concat([self.data_dict[k] for k in self.out_vars], dim="plev")
         print("in", len(inp_data))
@@ -174,12 +181,7 @@ class CMIP6Forecasting(CMIP6):
             self.inp_transform = None
             self.out_transform = None
             self.constant_transform = None
-
-        self.time = (
-            self.data_dict[self.in_vars[0]]
-            .time.to_numpy()[:-pred_range:subsample]
-            .copy()
-        )
+        
         self.inp_lon = self.data_dict[self.in_vars[0]].lon.to_numpy().copy()
         self.inp_lat = self.data_dict[self.in_vars[0]].lat.to_numpy().copy()
         self.out_lon = self.data_dict[self.out_vars[0]].lon.to_numpy().copy()
@@ -208,7 +210,7 @@ class CMIP6Forecasting(CMIP6):
             idx = index + self.window * i
             inp.append(self.inp_data[idx])
         inp = np.stack(inp, axis=0)
-        out_idx = index + (self.history - 1) * self.window + self.pred_range
+        out_idx = index + (self.history - 1) * self.window + (self.pred_range // 6)
         out = self.out_data[out_idx]
         return inp, out
 
