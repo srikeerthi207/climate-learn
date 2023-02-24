@@ -215,7 +215,7 @@ class ERA5Forecasting(ERA5):
         return inp, out, self.in_vars + list(self.constants.keys()), self.out_vars
 
     def __len__(self):
-        return len(self.inp_data) - ((self.history - 1) * self.window + self.pred_range)
+        return len(self.inp_data) - ((self.history - 1) * self.window + self.pred_range // self.subsample)
 
 
 class ERA5Downscaling(ERA5):
