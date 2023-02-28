@@ -34,12 +34,12 @@ class Trainer:
         )
         summary_callback = RichModelSummary(max_depth=-1)
         progress_callback = RichProgressBar()
-        early_stop_callback = EarlyStopping(
-            monitor="val_loss", 
-            patience=patience, 
-            verbose=False,
-            mode="min"
-        )
+        # early_stop_callback = EarlyStopping(
+        #     monitor="val_loss", 
+        #     patience=patience, 
+        #     verbose=False,
+        #     mode="min"
+        # )
 
         self.trainer = LitTrainer(
             logger=logger,
@@ -49,6 +49,7 @@ class Trainer:
             max_epochs=max_epochs,
             default_root_dir="/data0/ckpts/seongbin/data-cross-train-2",
             callbacks=[checkpoint_callback, summary_callback, progress_callback, early_stop_callback],
+            callbacks=[checkpoint_callback, summary_callback, progress_callback],
         )
 
     def fit(self, model_module, data_module):
