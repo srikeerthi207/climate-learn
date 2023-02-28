@@ -48,7 +48,7 @@ class Trainer:
             precision=precision,
             max_epochs=max_epochs,
             default_root_dir="/data0/ckpts/seongbin/data-cross-train-2",
-            callbacks=[checkpoint_callback, summary_callback, progress_callback, early_stop_callback],
+            # callbacks=[checkpoint_callback, summary_callback, progress_callback, early_stop_callback],
             callbacks=[checkpoint_callback, summary_callback, progress_callback],
         )
 
